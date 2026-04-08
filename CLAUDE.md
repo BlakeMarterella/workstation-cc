@@ -36,6 +36,21 @@ Dotfiles are symlinked, not copied. The symlink target is always inside this rep
 
 Small utility scripts live in `scripts/`. The installer symlinks this directory (or its contents) into a location already on `$PATH` (e.g. `~/.local/bin`). Scripts should be self-contained and not depend on each other unless clearly documented.
 
+## Dotfiles table versioning
+
+The dotfiles table in `README.md` tracks each managed dotfile with its own version. Columns: `File` (linked to the file in the repo), `Description`, `Version`, `Updated`.
+
+**When to bump a dotfile's version:**
+- **patch** (`0.1.0` → `0.1.1`): minor edits (tweaking a setting, adding a comment)
+- **minor** (`0.1.0` → `0.2.0`): meaningful behavior change (new plugin, restructured config)
+- **major** (`0.1.0` → `1.0.0`): complete rewrite or breaking change to the config
+
+**When editing a dotfile**, update its row in the table in the same commit:
+1. Bump its `Version` using the rules above
+2. Set `Updated` to today's date (`YYYY-MM-DD`)
+
+**When adding a dotfile**, add a new row starting at `0.1.0` with today's date.
+
 ## Key design constraints
 
 - **Idempotent**: every installer step must be safe to run multiple times.
