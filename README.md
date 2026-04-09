@@ -5,14 +5,8 @@ Welcome to the Workstation Command Center! This is a setup utility to configure 
 ## What it does
 
 - Installs CLI utilities and GUI applications
-- Symlinks dotfiles into `$HOME`
+- Bootstraps dotfiles via [yadm](https://yadm.io) from a separate dotfiles repo
 - Adds small utility scripts to `$PATH`
-
-## Dotfiles
-
-| File | Description | Version | Updated |
-|---|---|---|---|
-| [`.vimrc`](dotfiles/.vimrc) | Vim configuration | 0.1.0 | 2026-04-08 |
 
 ## Usage
 
@@ -34,5 +28,8 @@ Welcome to the Workstation Command Center! This is a setup utility to configure 
 |---|---|
 | `--slim` | Install essentials only |
 | `--full` | Install everything (default) |
-| `--dotfiles-only` | Symlink dotfiles, skip packages |
 | `--dry-run` | Preview changes without applying them |
+
+## Dotfiles
+
+Dotfiles are managed via yadm in a separate repository. `install.sh` installs yadm and bootstraps the dotfiles repo automatically. To change which dotfiles repo is used, update `YADM_REPO` in `config.sh`.

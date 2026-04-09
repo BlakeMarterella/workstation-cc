@@ -10,9 +10,9 @@ This is a workstation setup tool — the first thing cloned on a new machine. It
 
 ```
 install.sh / install.ps1     # Entry points per platform (shell/PowerShell)
-lib/                         # Shared logic (package managers, symlinks, OS detection)
+config.sh                    # User-facing config: YADM_REPO, profile defaults, etc.
+lib/                         # Shared logic (package managers, OS detection, yadm bootstrap)
 packages/                    # Declarative package lists, organized by category
-dotfiles/                    # Config files to be symlinked into $HOME
 scripts/                     # Small standalone tools that go on $PATH
 profiles/                    # Installation profiles (slim, full, dev, etc.)
 os/                          # OS-specific overrides or installers
@@ -30,26 +30,11 @@ Profiles control what gets installed. A `slim` profile installs only essentials;
 
 ### Dotfiles
 
-Dotfiles are symlinked, not copied. The symlink target is always inside this repo so edits to dotfiles are immediately tracked in git. The installer should be idempotent — re-running it on an already-configured machine should be safe and should update symlinks/packages without destructive side effects.
+Dotfiles are managed in a **separate repo** via [yadm](https://yadm.io). This repo does not contain dotfiles. `install.sh` installs yadm, then bootstraps the dotfiles repo by running `yadm clone <repo>`. The target repo URL is defined in `config.sh` as `YADM_REPO`.
 
 ### Scripts on `$PATH`
 
 Small utility scripts live in `scripts/`. The installer symlinks this directory (or its contents) into a location already on `$PATH` (e.g. `~/.local/bin`). Scripts should be self-contained and not depend on each other unless clearly documented.
-
-## Dotfiles table versioning
-
-The dotfiles table in `README.md` tracks each managed dotfile with its own version. Columns: `File` (linked to the file in the repo), `Description`, `Version`, `Updated`.
-
-**When to bump a dotfile's version:**
-- **patch** (`0.1.0` → `0.1.1`): minor edits (tweaking a setting, adding a comment)
-- **minor** (`0.1.0` → `0.2.0`): meaningful behavior change (new plugin, restructured config)
-- **major** (`0.1.0` → `1.0.0`): complete rewrite or breaking change to the config
-
-**When editing a dotfile**, update its row in the table in the same commit:
-1. Bump its `Version` using the rules above
-2. Set `Updated` to today's date (`YYYY-MM-DD`)
-
-**When adding a dotfile**, add a new row starting at `0.1.0` with today's date.
 
 ## Key design constraints
 
