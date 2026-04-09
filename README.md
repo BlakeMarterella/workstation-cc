@@ -10,10 +10,11 @@ Welcome to the Workstation Command Center! This is a setup utility to configure 
 
 ## Usage
 
-**macOS / Linux**
+**macOS** *(proof of concept)*
 ```sh
-./install.sh          # full install
-./install.sh --slim   # essentials only
+./install.sh              # dry-run by default — previews changes without applying them
+./install.sh --execute    # apply changes
+./install.sh --slim --execute   # essentials only, apply changes
 ```
 
 **Windows**
@@ -26,9 +27,9 @@ Welcome to the Workstation Command Center! This is a setup utility to configure 
 
 | Flag | Description |
 |---|---|
+| `--execute` | Apply changes (required; dry-run is the default) |
 | `--slim` | Install essentials only |
 | `--full` | Install everything (default) |
-| `--dry-run` | Preview changes without applying them |
 
 ## Dotfiles
 
