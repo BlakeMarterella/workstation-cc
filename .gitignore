@@ -1,0 +1,11 @@
+# Compiled worker binary (built by users via preflight, or locally)
+/workstation
+/workstation.exe
+workstation_*_*
+
+# GoReleaser output
+/dist/
+
+# Go test/coverage artifacts
+*.out
+*.test
