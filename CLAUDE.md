@@ -27,7 +27,7 @@ Profiles control what gets installed. A `slim` profile installs only essentials;
 
 - The primary shell language is Bash for Linux/macOS. Windows uses PowerShell.
 - OS detection should be early and centralized (single function/file, not scattered `if [[ $OSTYPE ]]` blocks throughout).
-- Package manager abstraction: `brew` (macOS), `apt`/`dnf` (Linux), `winget`/`scoop` (Windows). The abstraction layer lives in `lib/` and callers shouldn't need to know which manager is active.
+- Package manager abstraction: `brew` (macOS), `apt`/`dnf` (Linux), `winget`/`scoop` (Windows). The abstraction layer lives in `wizard/internal/pkgmgr/` and callers shouldn't need to know which manager is active.
 - The Go module lives in `wizard/`. Because `//go:embed` cannot reach parent
   directories, `wizard/tools/gendata` copies root `packages/` + `profiles.yaml`
   into `wizard/` at build time (run via `go generate ./...`, also a GoReleaser

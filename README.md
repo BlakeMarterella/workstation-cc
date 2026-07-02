@@ -76,7 +76,7 @@ overwritten silently.
 
 The worker lives in `wizard/` as a standard Go module
 (`github.com/BlakeMarterella/workstation-cc`). You only need the
-[Go toolchain](https://go.dev/dl/) (1.22+) installed — everything else is a Go
+[Go toolchain](https://go.dev/dl/) (1.26+) installed — everything else is a Go
 dependency resolved by `go`.
 
 ### Layout
@@ -122,7 +122,7 @@ builds do not require a manual step.
 
 ```sh
 cd wizard
-go generate ./...                                         # only needed once after cloning
+go generate ./...                                         # copies root packages/ + profiles.yaml in (re-run after editing them)
 go run ./cmd/workstation --help
 go run ./cmd/workstation install --profile slim --dry-run  # safe preview
 go run ./cmd/workstation                                    # launch the TUI (needs a terminal)
