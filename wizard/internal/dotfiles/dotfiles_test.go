@@ -1,93 +1,152 @@
 package dotfiles
 
 import (
-	"errors"
-	"reflect"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
-// fakeEnv is a scriptable Env for testing the bootstrap decision logic without
-// touching the real yadm binary or filesystem.
-type fakeEnv struct {
-	hasYadm  bool
-	statusOK bool // whether `yadm status` reports an existing repo
-	cloneErr error
-	runCalls [][]string
-}
+func TestLinkTreeFreshLink(t *testing.T) {
+	fs := newFakeFS()
+	fs.addFile("/repo/dotfiles/.vimrc", "set number")
+	l := NewLinker(fs, "/home/u", false)
 
-func (f *fakeEnv) HasCommand(name string) bool { return name == "yadm" && f.hasYadm }
-
-func (f *fakeEnv) RunOK(name string, args ...string) bool {
-	if name == "yadm" && len(args) == 1 && args[0] == "status" {
-		return f.statusOK
-	}
-	return false
-}
-
-func (f *fakeEnv) Run(name string, args ...string) error {
-	f.runCalls = append(f.runCalls, append([]string{name}, args...))
-	return f.cloneErr
-}
-
-const repo = "https://github.com/example/dotfiles"
-
-func TestCloneFresh(t *testing.T) {
-	env := &fakeEnv{hasYadm: true, statusOK: false}
-	b := New(env)
-
-	status, err := b.Clone(repo)
+	results, err := l.LinkTree("/repo/dotfiles")
 	if err != nil {
-		t.Fatalf("Clone: %v", err)
+		t.Fatalf("LinkTree: %v", err)
 	}
-	if status != StatusCloned {
-		t.Errorf("status = %v, want StatusCloned", status)
+	if len(results) != 1 || results[0].Action != ActionLinked {
+		t.Fatalf("results = %+v, want one ActionLinked", results)
 	}
-	want := []string{"yadm", "clone", repo}
-	if len(env.runCalls) != 1 || !reflect.DeepEqual(env.runCalls[0], want) {
-		t.Errorf("run calls = %v, want one %v", env.runCalls, want)
+	target, ok := fs.symlinks["/home/u/.vimrc"]
+	if !ok || target != "/repo/dotfiles/.vimrc" {
+		t.Errorf("symlink = %q (present=%v), want /repo/dotfiles/.vimrc", target, ok)
 	}
 }
 
-func TestCloneSkipsWhenAlreadyPresent(t *testing.T) {
-	env := &fakeEnv{hasYadm: true, statusOK: true}
-	b := New(env)
+// fakeFS is an in-memory FS for testing the linker.
+type fakeFS struct {
+	files    map[string]string // path -> contents (regular files)
+	symlinks map[string]string // path -> target
+}
 
-	status, err := b.Clone(repo)
+func newFakeFS() *fakeFS {
+	return &fakeFS{files: map[string]string{}, symlinks: map[string]string{}}
+}
+
+func (f *fakeFS) addFile(path, contents string) { f.files[path] = contents }
+
+func (f *fakeFS) WalkFiles(root string, fn func(path string) error) error {
+	for p := range f.files {
+		rel, err := filepath.Rel(root, p)
+		// Skip files outside root: filepath.Rel returns a path starting with ".."
+		// when p is not under root. Use strings.HasPrefix to avoid a panic when
+		// rel is shorter than 2 chars (e.g. rel == "."), which would make rel[:2] panic.
+		if err != nil || strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) {
+			continue
+		}
+		if err := fn(p); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (f *fakeFS) Readlink(name string) (string, error) {
+	if t, ok := f.symlinks[name]; ok {
+		return t, nil
+	}
+	return "", errNotSymlink
+}
+
+func (f *fakeFS) Lstat(name string) (bool, bool, error) {
+	if _, ok := f.symlinks[name]; ok {
+		return true, true, nil
+	}
+	if _, ok := f.files[name]; ok {
+		return true, false, nil
+	}
+	return false, false, nil
+}
+
+func (f *fakeFS) MkdirAll(string) error { return nil }
+
+func (f *fakeFS) Symlink(oldname, newname string) error {
+	f.symlinks[newname] = oldname
+	return nil
+}
+
+func (f *fakeFS) Rename(oldpath, newpath string) error {
+	if c, ok := f.files[oldpath]; ok {
+		f.files[newpath] = c
+		delete(f.files, oldpath)
+		return nil
+	}
+	if t, ok := f.symlinks[oldpath]; ok {
+		f.symlinks[newpath] = t
+		delete(f.symlinks, oldpath)
+		return nil
+	}
+	return errNotSymlink
+}
+
+var errNotSymlink = fmtErrorf("not a symlink")
+
+func fmtErrorf(s string) error { return &simpleErr{s} }
+
+type simpleErr struct{ s string }
+
+func (e *simpleErr) Error() string { return e.s }
+
+func TestLinkOneIdempotent(t *testing.T) {
+	fs := newFakeFS()
+	fs.addFile("/repo/dotfiles/.vimrc", "x")
+	fs.symlinks["/home/u/.vimrc"] = "/repo/dotfiles/.vimrc" // already linked
+	l := NewLinker(fs, "/home/u", false)
+
+	res, err := l.LinkOne("/repo/dotfiles/.vimrc", "/home/u/.vimrc")
 	if err != nil {
-		t.Fatalf("Clone: %v", err)
+		t.Fatalf("LinkOne: %v", err)
 	}
-	if status != StatusAlreadyPresent {
-		t.Errorf("status = %v, want StatusAlreadyPresent", status)
-	}
-	if len(env.runCalls) != 0 {
-		t.Errorf("expected no clone, got %v", env.runCalls)
+	if res.Action != ActionAlreadyLinked {
+		t.Errorf("action = %v, want ActionAlreadyLinked", res.Action)
 	}
 }
 
-func TestCloneErrorsWhenYadmMissing(t *testing.T) {
-	env := &fakeEnv{hasYadm: false}
-	b := New(env)
+func TestLinkOneBacksUpConflict(t *testing.T) {
+	fs := newFakeFS()
+	fs.addFile("/repo/dotfiles/.vimrc", "new")
+	fs.addFile("/home/u/.vimrc", "existing user file") // real file in the way
+	l := NewLinker(fs, "/home/u", false)
 
-	if _, err := b.Clone(repo); err == nil {
-		t.Error("expected error when yadm missing, got nil")
+	res, err := l.LinkOne("/repo/dotfiles/.vimrc", "/home/u/.vimrc")
+	if err != nil {
+		t.Fatalf("LinkOne: %v", err)
+	}
+	if res.Action != ActionBackedUp {
+		t.Errorf("action = %v, want ActionBackedUp", res.Action)
+	}
+	if fs.files["/home/u/.vimrc.bak"] != "existing user file" {
+		t.Errorf("backup contents = %q, want preserved original", fs.files["/home/u/.vimrc.bak"])
+	}
+	if fs.symlinks["/home/u/.vimrc"] != "/repo/dotfiles/.vimrc" {
+		t.Errorf("symlink not created after backup")
 	}
 }
 
-func TestClonePropagatesCloneError(t *testing.T) {
-	sentinel := errors.New("network down")
-	env := &fakeEnv{hasYadm: true, statusOK: false, cloneErr: sentinel}
-	b := New(env)
+func TestLinkOneDryRunMakesNoChanges(t *testing.T) {
+	fs := newFakeFS()
+	fs.addFile("/repo/dotfiles/.vimrc", "x")
+	l := NewLinker(fs, "/home/u", true) // dry-run
 
-	if _, err := b.Clone(repo); !errors.Is(err, sentinel) {
-		t.Errorf("err = %v, want wrap of %v", err, sentinel)
+	res, err := l.LinkOne("/repo/dotfiles/.vimrc", "/home/u/.vimrc")
+	if err != nil {
+		t.Fatalf("LinkOne: %v", err)
 	}
-}
-
-func TestCloneEmptyRepo(t *testing.T) {
-	env := &fakeEnv{hasYadm: true}
-	b := New(env)
-
-	if _, err := b.Clone(""); err == nil {
-		t.Error("expected error for empty repo URL, got nil")
+	if res.Action != ActionSkipped {
+		t.Errorf("action = %v, want ActionSkipped", res.Action)
+	}
+	if len(fs.symlinks) != 0 {
+		t.Errorf("dry-run created symlinks: %v", fs.symlinks)
 	}
 }

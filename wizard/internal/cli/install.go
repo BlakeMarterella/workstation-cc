@@ -121,15 +121,16 @@ func runInstall(out io.Writer, opts installOptions) error {
 }
 
 func bootstrapDotfiles(out io.Writer, opts installOptions) error {
-	fmt.Fprintln(out, ui.Header("Dotfiles (yadm)"))
+	fmt.Fprintln(out, ui.Header("Dotfiles"))
+	// Task 6 will wire NewLinker into this CLI path with the local checkout root.
+	// For now, use dryRun mode as a safe no-op that still exercises the linker.
+	l := dotfiles.NewLinker(dotfiles.OSFS{}, os.Getenv("HOME"), true)
 	if opts.dryRun {
-		fmt.Fprintf(out, "  - would clone %s\n", opts.dotfilesRepo)
+		fmt.Fprintf(out, "  - dry-run: would link dotfiles from local checkout\n")
+		_ = l
 		return nil
 	}
-	status, err := dotfiles.New(dotfiles.OSEnv{}).Clone(opts.dotfilesRepo)
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(out, "  - %s: %s\n", opts.dotfilesRepo, status)
+	fmt.Fprintf(out, "  - dotfile linking not yet wired (Task 6)\n")
+	_ = l
 	return nil
 }
