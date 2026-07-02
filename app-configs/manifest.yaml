@@ -1,0 +1,13 @@
+# Maps each app-configs/ entry to its install destination.
+# dest may be a single "default" path or per-OS keys (darwin/linux/windows).
+# `~` expands to the user's home directory. An entry with no destination for the
+# current OS is skipped with a notice (not an error).
+entries: []
+  # Example:
+  # - name: nvim
+  #   dest:
+  #     default: ~/.config/nvim
+  # - name: vscode-settings
+  #   dest:
+  #     darwin: ~/Library/Application Support/Code/User
+  #     linux: ~/.config/Code/User
