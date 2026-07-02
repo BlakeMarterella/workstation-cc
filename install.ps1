@@ -54,6 +54,11 @@ try {
     Copy-Item -Path $binPath -Destination $dest -Force
     Write-Host "[preflight] Installed worker to $dest"
 
+    # Point the worker at this checkout so it can symlink dotfiles/ + app-configs/.
+    if (-not $env:WORKSTATION_ROOT) {
+        $env:WORKSTATION_ROOT = $PSScriptRoot
+    }
+
     & $dest @WorkerArgs
     exit $LASTEXITCODE
 }

@@ -1,9 +1,10 @@
 #!/usr/bin/env sh
 # install.sh — workstation-cc entry point (macOS / Linux).
 #
-# This is intentionally thin. It loads config, runs the preflight (which installs
-# prerequisites and downloads the verified worker binary), then hands off to the
-# worker. All real logic lives in the Go worker.
+# This is intentionally thin. It loads config, runs the preflight (installs
+# prerequisites, downloads the verified worker binary), points the worker at this
+# checkout (WORKSTATION_ROOT) so it can symlink dotfiles/ and app-configs/, then
+# hands off. All real logic is in Go.
 #
 # Usage:
 #   ./install.sh                 # launch the worker (interactive TUI if a terminal)
@@ -15,7 +16,7 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
-# Load user configuration if present (sets WORKSTATION_REPO, YADM_REPO, etc.).
+# Load user configuration if present (sets WORKSTATION_REPO, WORKSTATION_VERSION, etc.).
 if [ -f "${SCRIPT_DIR}/config.sh" ]; then
 	# shellcheck source=config.sh
 	. "${SCRIPT_DIR}/config.sh"
@@ -27,10 +28,10 @@ fi
 # Prepare prerequisites and download the worker; sets WORKSTATION_BIN.
 workstation_preflight
 
-# Pass the configured dotfiles repo to the worker via its env override.
-if [ -n "${YADM_REPO:-}" ]; then
-	export WORKSTATION_YADM_REPO="${YADM_REPO}"
-fi
+# The wizard symlinks dotfiles/ and app-configs/ from a checkout of this repo.
+# By default that is the directory this script lives in (the repo you cloned).
+: "${WORKSTATION_ROOT:=${SCRIPT_DIR}}"
+export WORKSTATION_ROOT
 
 # Hand off to the worker (replacing this process so signals/exit codes pass through).
 exec "${WORKSTATION_BIN}" "$@"

@@ -11,5 +11,6 @@ WORKSTATION_VERSION="latest"
 # Where the worker binary is installed (should be on your PATH).
 WORKSTATION_BIN_DIR="${HOME}/.local/bin"
 
-# Dotfiles repository, cloned via yadm by the worker.
-YADM_REPO="https://github.com/BlakeMarterella/workstation-dotfiles"
+# Checkout of this repo the worker links dotfiles from. Defaults to the directory
+# install.sh lives in; override to link from a different clone.
+# WORKSTATION_ROOT="${HOME}/git/workstation-cc"
