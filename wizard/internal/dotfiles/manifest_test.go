@@ -13,6 +13,26 @@ entries:
       linux: ~/.config/Code/User
 `
 
+func TestParseEmptyManifest(t *testing.T) {
+	// Test that empty input yields an empty manifest without error
+	m, err := ParseManifest([]byte(""))
+	if err != nil {
+		t.Fatalf("ParseManifest(empty): %v", err)
+	}
+	if len(m.Entries) != 0 {
+		t.Errorf("ParseManifest(empty) len(Entries) = %d, want 0", len(m.Entries))
+	}
+
+	// Test that whitespace-only input also yields an empty manifest
+	m, err = ParseManifest([]byte("   "))
+	if err != nil {
+		t.Fatalf("ParseManifest(whitespace): %v", err)
+	}
+	if len(m.Entries) != 0 {
+		t.Errorf("ParseManifest(whitespace) len(Entries) = %d, want 0", len(m.Entries))
+	}
+}
+
 func TestParseAndResolveDefault(t *testing.T) {
 	m, err := ParseManifest([]byte(sampleManifest))
 	if err != nil {
@@ -25,7 +45,10 @@ func TestParseAndResolveDefault(t *testing.T) {
 }
 
 func TestResolvePerOS(t *testing.T) {
-	m, _ := ParseManifest([]byte(sampleManifest))
+	m, err := ParseManifest([]byte(sampleManifest))
+	if err != nil {
+		t.Fatalf("ParseManifest: %v", err)
+	}
 	got, ok := m.DestFor("vscode", "darwin", "/Users/u")
 	want := "/Users/u/Library/Application Support/Code/User"
 	if !ok || got != want {
@@ -34,7 +57,10 @@ func TestResolvePerOS(t *testing.T) {
 }
 
 func TestResolveMissingOSSkips(t *testing.T) {
-	m, _ := ParseManifest([]byte(sampleManifest))
+	m, err := ParseManifest([]byte(sampleManifest))
+	if err != nil {
+		t.Fatalf("ParseManifest: %v", err)
+	}
 	if _, ok := m.DestFor("vscode", "windows", "C:/Users/u"); ok {
 		t.Error("DestFor(vscode,windows) = ok, want not-ok (no windows dest)")
 	}
@@ -42,8 +68,14 @@ func TestResolveMissingOSSkips(t *testing.T) {
 
 func TestLinkAppsSkipsMissingOS(t *testing.T) {
 	fs := newFakeFS()
+	// nvim has a default dest, so it resolves on all OSes; pre-populate source so LinkOne has real entry
+	fs.addFile("/repo/app-configs/nvim/init.lua", "")
+	// vscode has no windows dest, so it should be ActionSkipped on windows
 	fs.addFile("/repo/app-configs/vscode/settings.json", "{}")
-	m, _ := ParseManifest([]byte(sampleManifest))
+	m, err := ParseManifest([]byte(sampleManifest))
+	if err != nil {
+		t.Fatalf("ParseManifest: %v", err)
+	}
 	l := NewLinker(fs, "C:/Users/u", true)
 
 	results, err := l.LinkApps("/repo/app-configs", m, "windows")
