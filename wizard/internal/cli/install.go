@@ -115,6 +115,13 @@ func linkDotfiles(out io.Writer, opts installOptions, goos string) error {
 		return fmt.Errorf("no checkout root: set WORKSTATION_ROOT or pass --root " +
 			"(install.sh does this automatically)")
 	}
+	// Resolve to an absolute path so symlink targets are stable: a symlink's
+	// target is interpreted relative to the link's own directory ($HOME), not
+	// the working directory, so a relative --root would produce broken links.
+	root, err := filepath.Abs(opts.root)
+	if err != nil {
+		return err
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
@@ -122,14 +129,14 @@ func linkDotfiles(out io.Writer, opts installOptions, goos string) error {
 	l := dotfiles.NewLinker(dotfiles.OSFS{}, home, opts.dryRun)
 
 	fmt.Fprintln(out, ui.Header("Dotfiles"))
-	dfResults, err := l.LinkTree(filepath.Join(opts.root, "dotfiles"))
+	dfResults, err := l.LinkTree(filepath.Join(root, "dotfiles"))
 	if err != nil {
 		return err
 	}
 	printLinkResults(out, dfResults)
 
 	fmt.Fprintln(out, ui.Header("App configs"))
-	manifestPath := filepath.Join(opts.root, "app-configs", "manifest.yaml")
+	manifestPath := filepath.Join(root, "app-configs", "manifest.yaml")
 	data, err := os.ReadFile(manifestPath)
 	if err != nil {
 		return fmt.Errorf("read %s: %w", manifestPath, err)
@@ -138,7 +145,7 @@ func linkDotfiles(out io.Writer, opts installOptions, goos string) error {
 	if err != nil {
 		return err
 	}
-	appResults, err := l.LinkApps(filepath.Join(opts.root, "app-configs"), m, goos)
+	appResults, err := l.LinkApps(filepath.Join(root, "app-configs"), m, goos)
 	if err != nil {
 		return err
 	}
