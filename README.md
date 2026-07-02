@@ -58,6 +58,89 @@ Profiles are additive and composable (`slim ⊂ full`) and are defined in
 `profiles.yaml`. Packages are declared in `packages/*.yaml`, organized by
 category, and embedded into the binary at build time.
 
+## Development
+
+The worker lives in this repo as a standard Go module
+(`github.com/BlakeMarterella/workstation-cc`). You only need the
+[Go toolchain](https://go.dev/dl/) (1.26+) installed — everything else is a Go
+dependency resolved by `go`.
+
+### Layout
+
+```
+cmd/workstation/      # main package — entry point
+internal/osdetect/    # OS + arch detection
+internal/pkgmgr/      # package-manager abstraction (brew, apt/dnf/winget stubs)
+internal/packages/    # loads the embedded packages/*.yaml catalog
+internal/profiles/    # profile resolution (slim ⊂ full)
+internal/dotfiles/    # yadm bootstrap
+internal/installer/   # builds and executes an install plan
+internal/tui/         # Bubble Tea interactive UI
+internal/cli/         # Cobra command wiring
+internal/ui/          # shared Lip Gloss styles
+packages/*.yaml       # declarative package catalog (embedded at build time)
+profiles.yaml         # profile definitions (embedded at build time)
+```
+
+### Run from source
+
+No build step needed while iterating — `go run` compiles and runs in one step:
+
+```sh
+go run ./cmd/workstation --help
+go run ./cmd/workstation install --profile slim --dry-run   # safe preview
+go run ./cmd/workstation                                    # launch the TUI (needs a terminal)
+```
+
+`--dry-run` never changes your system, so it's the safe way to test package
+resolution and output. Omit it (and pass `--yes`) only when you actually want
+packages installed.
+
+### Build a binary
+
+```sh
+go build -o workstation ./cmd/workstation   # produces ./workstation (gitignored)
+./workstation --version
+```
+
+Cross-compile for another platform by setting `GOOS`/`GOARCH`:
+
+```sh
+GOOS=linux  GOARCH=amd64 go build -o workstation-linux ./cmd/workstation
+GOOS=darwin GOARCH=arm64 go build -o workstation-mac   ./cmd/workstation
+```
+
+Release builds are produced by [GoReleaser](https://goreleaser.com); preview the
+full matrix locally with `goreleaser release --snapshot --clean` (output in
+`dist/`).
+
+### Test, format, vet
+
+```sh
+go test ./...        # run all unit tests
+go test -count=1 ./... # run tests without the cache
+gofmt -l .           # list unformatted files (should print nothing)
+gofmt -w .           # format in place
+go vet ./...         # static checks
+```
+
+These are the same checks CI runs (`.github/workflows/ci.yml`). New code follows
+test-driven development — write the failing test first, then the implementation.
+
+### Add packages or profiles
+
+Package data and profiles are plain YAML embedded into the binary via `go:embed`,
+so **rebuild after editing** for changes to take effect:
+
+- Add a package: edit the relevant `packages/<category>.yaml`. Give it a `name`,
+  a `description`, and a `managers:` map of package-manager → package id (add
+  `cask: true` for macOS GUI apps).
+- Add or change a profile: edit `profiles.yaml`. A profile lists `groups:`
+  (category names) and may `includes:` other profiles.
+
+Verify a change end-to-end with a dry run, e.g. `go run ./cmd/workstation install
+--profile full --dry-run`.
+
 ## Dotfiles
 
 Dotfiles are managed via yadm in a separate repository. The worker installs yadm
