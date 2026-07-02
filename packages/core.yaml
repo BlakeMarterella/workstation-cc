@@ -37,9 +37,3 @@ packages:
       brew: jq
       apt: jq
       dnf: jq
-  - name: yadm
-    description: Yet Another Dotfiles Manager
-    managers:
-      brew: yadm
-      apt: yadm
-      dnf: yadm

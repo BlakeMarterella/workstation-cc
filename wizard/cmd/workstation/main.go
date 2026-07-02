@@ -1,8 +1,8 @@
 // Command workstation is the worker binary for workstation-cc.
 //
 // It performs the real bootstrap work: OS detection, package-manager
-// abstraction, profile resolution, package installation, and yadm dotfiles
-// bootstrap. The thin install.sh/preflight scripts download and exec this
+// abstraction, profile resolution, package installation, and dotfile
+// symlinking. The thin install.sh/preflight scripts download and exec this
 // binary.
 package main
 

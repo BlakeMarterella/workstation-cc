@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/BlakeMarterella/workstation-cc/internal/dotfiles"
 	"github.com/BlakeMarterella/workstation-cc/internal/installer"
@@ -15,16 +16,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// defaultDotfilesRepo mirrors YADM_REPO from the original config.sh. It can be
-// overridden by the WORKSTATION_YADM_REPO env var or the --dotfiles-repo flag.
-const defaultDotfilesRepo = "https://github.com/BlakeMarterella/workstation-dotfiles"
-
 type installOptions struct {
 	profile      string
 	dryRun       bool
 	assumeYes    bool
 	skipDotfiles bool
-	dotfilesRepo string
+	root         string // repo checkout to link dotfiles/ and app-configs/ from
 }
 
 func newInstallCmd() *cobra.Command {
@@ -32,11 +29,11 @@ func newInstallCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "install",
-		Short: "Install packages for a profile and bootstrap dotfiles",
+		Short: "Install packages for a profile and symlink dotfiles",
 		Long: "Install resolves a profile into a set of packages, installs the " +
-			"missing ones via the host package manager, and bootstraps the yadm " +
-			"dotfiles repo. It is non-interactive and idempotent: use --dry-run to " +
-			"preview, and --yes to apply changes.",
+			"missing ones via the host package manager, and symlinks the repo's " +
+			"dotfiles/ and app-configs/ into place. It is non-interactive and " +
+			"idempotent: use --dry-run to preview, and --yes to apply changes.",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runInstall(cmd.OutOrStdout(), opts)
@@ -47,17 +44,10 @@ func newInstallCmd() *cobra.Command {
 	f.StringVar(&opts.profile, "profile", "slim", "installation profile to apply")
 	f.BoolVar(&opts.dryRun, "dry-run", false, "preview actions without changing anything")
 	f.BoolVar(&opts.assumeYes, "yes", false, "apply changes without prompting (required to mutate)")
-	f.BoolVar(&opts.skipDotfiles, "skip-dotfiles", false, "do not bootstrap the yadm dotfiles repo")
-	f.StringVar(&opts.dotfilesRepo, "dotfiles-repo", dotfilesRepoDefault(), "yadm dotfiles repository URL")
+	f.BoolVar(&opts.skipDotfiles, "skip-dotfiles", false, "do not symlink dotfiles/ or app-configs/")
+	f.StringVar(&opts.root, "root", os.Getenv("WORKSTATION_ROOT"), "repo checkout to link dotfiles from")
 
 	return cmd
-}
-
-func dotfilesRepoDefault() string {
-	if v := os.Getenv("WORKSTATION_YADM_REPO"); v != "" {
-		return v
-	}
-	return defaultDotfilesRepo
 }
 
 func runInstall(out io.Writer, opts installOptions) error {
@@ -106,7 +96,7 @@ func runInstall(out io.Writer, opts installOptions) error {
 	}
 
 	if !opts.skipDotfiles {
-		if err := bootstrapDotfiles(out, opts); err != nil {
+		if err := linkDotfiles(out, opts, string(info.OS)); err != nil {
 			return err
 		}
 	}
@@ -120,17 +110,51 @@ func runInstall(out io.Writer, opts installOptions) error {
 	return nil
 }
 
-func bootstrapDotfiles(out io.Writer, opts installOptions) error {
-	fmt.Fprintln(out, ui.Header("Dotfiles"))
-	// Task 6 will wire NewLinker into this CLI path with the local checkout root.
-	// For now, use dryRun mode as a safe no-op that still exercises the linker.
-	l := dotfiles.NewLinker(dotfiles.OSFS{}, os.Getenv("HOME"), true)
-	if opts.dryRun {
-		fmt.Fprintf(out, "  - dry-run: would link dotfiles from local checkout\n")
-		_ = l
-		return nil
+func linkDotfiles(out io.Writer, opts installOptions, goos string) error {
+	if opts.root == "" {
+		return fmt.Errorf("no checkout root: set WORKSTATION_ROOT or pass --root " +
+			"(install.sh does this automatically)")
 	}
-	fmt.Fprintf(out, "  - dotfile linking not yet wired (Task 6)\n")
-	_ = l
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	l := dotfiles.NewLinker(dotfiles.OSFS{}, home, opts.dryRun)
+
+	fmt.Fprintln(out, ui.Header("Dotfiles"))
+	dfResults, err := l.LinkTree(filepath.Join(opts.root, "dotfiles"))
+	if err != nil {
+		return err
+	}
+	printLinkResults(out, dfResults)
+
+	fmt.Fprintln(out, ui.Header("App configs"))
+	manifestPath := filepath.Join(opts.root, "app-configs", "manifest.yaml")
+	data, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return fmt.Errorf("read %s: %w", manifestPath, err)
+	}
+	m, err := dotfiles.ParseManifest(data)
+	if err != nil {
+		return err
+	}
+	appResults, err := l.LinkApps(filepath.Join(opts.root, "app-configs"), m, goos)
+	if err != nil {
+		return err
+	}
+	printLinkResults(out, appResults)
 	return nil
+}
+
+func printLinkResults(out io.Writer, results []dotfiles.Result) {
+	for _, r := range results {
+		line := fmt.Sprintf("  - %s: %s", r.Dest, r.Action)
+		if r.Dest == "" {
+			line = fmt.Sprintf("  - %s: %s", r.Path, r.Action)
+		}
+		if r.Note != "" {
+			line += " (" + r.Note + ")"
+		}
+		fmt.Fprintln(out, line)
+	}
 }

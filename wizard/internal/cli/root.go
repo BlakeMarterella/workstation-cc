@@ -15,8 +15,8 @@ func NewRootCmd(version string) *cobra.Command {
 		Use:   "workstation",
 		Short: "Bootstrap and manage a workstation (packages, dotfiles, profiles)",
 		Long: "workstation is the worker binary for workstation-cc. It installs " +
-			"utilities, manages dotfiles via yadm, and applies installation profiles " +
-			"across macOS, Linux, and Windows.",
+			"utilities, symlinks repo-owned dotfiles, and applies installation " +
+			"profiles across macOS, Linux, and Windows.",
 		Version:       version,
 		SilenceUsage:  true,
 		SilenceErrors: false,

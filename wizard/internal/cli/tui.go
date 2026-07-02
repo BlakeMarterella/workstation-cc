@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/BlakeMarterella/workstation-cc/internal/osdetect"
 	"github.com/BlakeMarterella/workstation-cc/internal/packages"
@@ -42,8 +43,8 @@ func runTUI(out io.Writer) error {
 	}
 
 	return runInstall(out, installOptions{
-		profile:      res.Profile,
-		assumeYes:    true,
-		dotfilesRepo: dotfilesRepoDefault(),
+		profile:   res.Profile,
+		assumeYes: true,
+		root:      os.Getenv("WORKSTATION_ROOT"),
 	})
 }

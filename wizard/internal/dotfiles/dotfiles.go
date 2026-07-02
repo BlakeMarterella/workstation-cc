@@ -1,7 +1,7 @@
-// Package dotfiles symlinks repo-owned dotfiles and app configs into place. It
-// replaces the previous yadm bootstrap: this repo now owns its dotfiles, and the
-// wizard links them from the local checkout. Linking is idempotent and never
-// overwrites an existing real file silently — conflicts are backed up first.
+// Package dotfiles symlinks repo-owned dotfiles and app configs into place.
+// The wizard links them from the local checkout. Linking is idempotent and
+// never overwrites an existing real file silently — conflicts are backed up
+// first.
 package dotfiles
 
 import (
