@@ -8,6 +8,7 @@ project_name: workstation-cc
 
 before:
   hooks:
+    - go generate ./...
     - go mod tidy
 
 builds:

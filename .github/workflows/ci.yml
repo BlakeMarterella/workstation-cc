@@ -17,14 +17,22 @@ jobs:
         with:
           go-version: stable
 
+      - name: Generate embedded data
+        run: go generate ./...
+        working-directory: wizard
+
       - name: Verify formatting
         run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+        working-directory: wizard
 
       - name: Vet
         run: go vet ./...
+        working-directory: wizard
 
       - name: Test
         run: go test ./...
+        working-directory: wizard
 
       - name: Build
         run: go build ./...
+        working-directory: wizard
