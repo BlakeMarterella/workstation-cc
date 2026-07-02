@@ -9,13 +9,14 @@ This is a workstation setup tool — the first thing cloned on a new machine. It
 ### Top-level structure (intended)
 
 ```
-install.sh / install.ps1     # Entry points per platform (shell/PowerShell)
-config.sh                    # User-facing config: YADM_REPO, profile defaults, etc.
-lib/                         # Shared logic (package managers, OS detection, yadm bootstrap)
-packages/                    # Declarative package lists, organized by category
-scripts/                     # Small standalone tools that go on $PATH
-profiles/                    # Installation profiles (slim, full, dev, etc.)
-os/                          # OS-specific overrides or installers
+install.sh / install.ps1     # Entry points per platform (thin; set WORKSTATION_ROOT)
+config.sh                    # User-facing config: WORKSTATION_ROOT, profile defaults
+wizard/                      # Self-contained Go module (CLI, TUI, all install logic)
+packages/                    # Declarative package lists (embedded at build time)
+profiles.yaml                # Installation profiles
+dotfiles/                    # Repo-owned dotfiles, mirrors $HOME (symlinked by wizard)
+app-configs/                 # App-specific configs + manifest.yaml (symlinked by wizard)
+docs/                        # Documentation and specs
 ```
 
 ### Installation profiles
@@ -27,10 +28,19 @@ Profiles control what gets installed. A `slim` profile installs only essentials;
 - The primary shell language is Bash for Linux/macOS. Windows uses PowerShell.
 - OS detection should be early and centralized (single function/file, not scattered `if [[ $OSTYPE ]]` blocks throughout).
 - Package manager abstraction: `brew` (macOS), `apt`/`dnf` (Linux), `winget`/`scoop` (Windows). The abstraction layer lives in `lib/` and callers shouldn't need to know which manager is active.
+- The Go module lives in `wizard/`. Because `//go:embed` cannot reach parent
+  directories, `wizard/tools/gendata` copies root `packages/` + `profiles.yaml`
+  into `wizard/` at build time (run via `go generate ./...`, also a GoReleaser
+  before-hook). These copies are gitignored.
 
 ### Dotfiles
 
-Dotfiles are managed in a **separate repo** via [yadm](https://yadm.io). This repo does not contain dotfiles. `install.sh` installs yadm, then bootstraps the dotfiles repo by running `yadm clone <repo>`. The target repo URL is defined in `config.sh` as `YADM_REPO`.
+Dotfiles are **owned by this repo**, not a separate repo. `dotfiles/` mirrors
+`$HOME`; `app-configs/` holds app-specific configs whose destinations are declared
+in `app-configs/manifest.yaml` (with per-OS support). The wizard symlinks these
+into place from the local checkout (located via `WORKSTATION_ROOT`, which the
+entry scripts default to the directory they live in). Existing real files are
+backed up to `<name>.bak` before linking — never overwritten silently.
 
 ### Scripts on `$PATH`
 
