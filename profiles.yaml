@@ -1,0 +1,15 @@
+# Installation profiles. Each profile selects one or more package groups
+# (categories from packages/*.yaml). Profiles are additive and composable:
+# `full` includes `slim`, never the reverse.
+profiles:
+  slim:
+    description: Essential CLI tools only.
+    groups:
+      - core
+  full:
+    description: Everything — CLI tools, dev tooling, and GUI apps.
+    includes:
+      - slim
+    groups:
+      - dev
+      - gui

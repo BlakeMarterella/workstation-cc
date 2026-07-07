@@ -1,0 +1,52 @@
+# GoReleaser configuration. On a pushed tag, cross-compiles the worker for
+# macOS, Linux, and Windows and publishes raw binaries plus a checksums file to
+# the GitHub Release. The preflight script downloads a single binary directly
+# (no archive extraction needed).
+version: 2
+
+project_name: workstation-cc
+
+before:
+  hooks:
+    - go generate ./...
+    - go mod tidy
+
+builds:
+  - id: workstation
+    main: ./cmd/workstation
+    binary: workstation
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      # No common Windows/arm64 target needed for this tool.
+      - goos: windows
+        goarch: arm64
+
+archives:
+  # Emit the raw binary (no tar/zip) so the preflight can curl it directly.
+  - id: binaries
+    formats:
+      - binary
+    name_template: "workstation_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+release:
+  github:
+    owner: BlakeMarterella
+    name: workstation-cc
+  draft: false
+  prerelease: auto

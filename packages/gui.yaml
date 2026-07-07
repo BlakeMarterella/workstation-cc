@@ -1,0 +1,23 @@
+category: gui
+description: Graphical applications (macOS casks; mapped elsewhere where available).
+packages:
+  - name: visual-studio-code
+    description: Code editor
+    cask: true
+    managers:
+      brew: visual-studio-code
+  - name: firefox
+    description: Web browser
+    cask: true
+    managers:
+      brew: firefox
+  - name: iterm2
+    description: macOS terminal emulator
+    cask: true
+    managers:
+      brew: iterm2
+  - name: rectangle
+    description: Window manager for macOS
+    cask: true
+    managers:
+      brew: rectangle

@@ -1,0 +1,39 @@
+category: core
+description: Essential CLI tools installed by every profile.
+packages:
+  - name: git
+    description: Distributed version control
+    managers:
+      brew: git
+      apt: git
+      dnf: git
+  - name: ripgrep
+    description: Fast recursive search (rg)
+    managers:
+      brew: ripgrep
+      apt: ripgrep
+      dnf: ripgrep
+  - name: fd
+    description: Fast, user-friendly find
+    managers:
+      brew: fd
+      apt: fd-find
+      dnf: fd-find
+  - name: fzf
+    description: Command-line fuzzy finder
+    managers:
+      brew: fzf
+      apt: fzf
+      dnf: fzf
+  - name: bat
+    description: cat with syntax highlighting
+    managers:
+      brew: bat
+      apt: bat
+      dnf: bat
+  - name: jq
+    description: Command-line JSON processor
+    managers:
+      brew: jq
+      apt: jq
+      dnf: jq
