@@ -75,6 +75,16 @@ func NewLinker(fsys FS, home string, dryRun bool) *Linker {
 func (l *Linker) LinkTree(srcRoot string) ([]Result, error) {
 	var results []Result
 	err := l.fs.WalkFiles(srcRoot, func(path string) error {
+		// README.md is documentation about the dotfiles tree, not a home-dir
+		// file — never link it into $HOME.
+		if filepath.Base(path) == "README.md" {
+			results = append(results, Result{
+				Path:   path,
+				Action: ActionSkipped,
+				Note:   "documentation, not linked",
+			})
+			return nil
+		}
 		rel, err := filepath.Rel(srcRoot, path)
 		if err != nil {
 			return err

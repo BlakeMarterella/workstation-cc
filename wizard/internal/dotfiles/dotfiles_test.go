@@ -24,6 +24,37 @@ func TestLinkTreeFreshLink(t *testing.T) {
 	}
 }
 
+func TestLinkTreeSkipsReadme(t *testing.T) {
+	fs := newFakeFS()
+	fs.addFile("/repo/dotfiles/.vimrc", "set number")
+	fs.addFile("/repo/dotfiles/README.md", "docs about this dir")
+	l := NewLinker(fs, "/home/u", false)
+
+	results, err := l.LinkTree("/repo/dotfiles")
+	if err != nil {
+		t.Fatalf("LinkTree: %v", err)
+	}
+	// README.md is documentation, not a home-dir file: it must never be linked.
+	if _, linked := fs.symlinks["/home/u/README.md"]; linked {
+		t.Error("README.md was linked into home; it should be skipped")
+	}
+	if _, linked := fs.symlinks["/home/u/.vimrc"]; !linked {
+		t.Error(".vimrc should still be linked")
+	}
+	var sawReadmeSkip bool
+	for _, r := range results {
+		if r.Path == "/repo/dotfiles/README.md" {
+			if r.Action != ActionSkipped {
+				t.Errorf("README.md action = %v, want ActionSkipped", r.Action)
+			}
+			sawReadmeSkip = true
+		}
+	}
+	if !sawReadmeSkip {
+		t.Error("expected a skipped Result for README.md")
+	}
+}
+
 // fakeFS is an in-memory FS for testing the linker.
 type fakeFS struct {
 	files    map[string]string // path -> contents (regular files)
