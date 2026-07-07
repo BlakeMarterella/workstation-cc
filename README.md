@@ -2,6 +2,25 @@
 
 Welcome to the Workstation Command Center! This is a setup utility to configure new machines. Clone this first and you will be off at blazing speed.
 
+## Quick start — first run on a new machine
+
+Clone the repo and launch the installer. This is the one thing to run on a brand-new machine:
+
+**macOS / Linux**
+```sh
+git clone https://github.com/BlakeMarterella/workstation-cc.git && cd workstation-cc && ./install.sh
+```
+
+**Windows (PowerShell)**
+```powershell
+git clone https://github.com/BlakeMarterella/workstation-cc.git; cd workstation-cc; .\install.ps1
+```
+
+`install.sh` / `install.ps1` bootstraps everything: it installs prerequisites,
+downloads the checksum-verified worker binary, and launches the interactive TUI
+so you can pick a profile. Prefer a non-interactive run? Append a subcommand,
+e.g. `./install.sh install --profile full --yes` (see [Usage](#usage)).
+
 ## What it does
 
 - Installs CLI utilities and GUI applications
