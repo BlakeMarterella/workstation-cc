@@ -1,0 +1,23 @@
+category: cli-full
+description: Full developer tooling — runtimes, version managers, containers.
+packages:
+  - name: node
+    description: Node.js JavaScript runtime
+    managers:
+      brew: node
+      apt: nodejs
+      dnf: nodejs
+  - name: pyenv
+    description: Python version management
+    managers:
+      brew: pyenv
+  - name: nvm
+    description: Node.js version manager
+    managers:
+      brew: nvm
+  - name: docker
+    description: Container runtime and CLI
+    managers:
+      brew: docker
+      apt: docker.io
+      dnf: docker

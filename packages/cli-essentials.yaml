@@ -1,0 +1,20 @@
+category: cli-essentials
+description: Essential CLI tooling for everyday development.
+packages:
+  - name: vim
+    description: Vi 'workalike' text editor
+    managers:
+      brew: vim
+      apt: vim
+      dnf: vim
+  - name: gh
+    description: GitHub CLI
+    managers:
+      brew: gh
+      apt: gh
+      dnf: gh
+  - name: claude-code
+    description: Claude Code — Anthropic's agentic coding CLI
+    cask: true
+    managers:
+      brew: claude-code

@@ -3,13 +3,15 @@
 # `full` includes `slim`, never the reverse.
 profiles:
   slim:
-    description: Essential CLI tools only.
+    description: Essential CLI tools and everyday developer tooling.
     groups:
       - core
+      - cli-essentials
   full:
-    description: Everything — CLI tools, dev tooling, and GUI apps.
+    description: Everything — CLI tools, full dev tooling, and GUI apps.
     includes:
       - slim
     groups:
-      - dev
+      - cli-full
       - gui
+      - fonts

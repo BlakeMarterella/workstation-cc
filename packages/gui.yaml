@@ -6,11 +6,11 @@ packages:
     cask: true
     managers:
       brew: visual-studio-code
-  - name: firefox
-    description: Web browser
+  - name: brave-browser
+    description: Privacy-focused web browser
     cask: true
     managers:
-      brew: firefox
+      brew: brave-browser
   - name: iterm2
     description: macOS terminal emulator
     cask: true
@@ -21,3 +21,43 @@ packages:
     cask: true
     managers:
       brew: rectangle
+  - name: 1password
+    description: Password manager
+    cask: true
+    managers:
+      brew: 1password
+  - name: spotify
+    description: Music streaming
+    cask: true
+    managers:
+      brew: spotify
+  - name: docker-desktop
+    description: Docker Desktop — container management GUI
+    cask: true
+    managers:
+      brew: docker-desktop
+  - name: obsidian
+    description: Markdown knowledge base and note-taking
+    cask: true
+    managers:
+      brew: obsidian
+  - name: claude
+    description: Claude desktop app
+    cask: true
+    managers:
+      brew: claude
+  - name: chatgpt
+    description: ChatGPT desktop app
+    cask: true
+    managers:
+      brew: chatgpt
+  - name: zoom
+    description: Video conferencing
+    cask: true
+    managers:
+      brew: zoom
+  - name: discord
+    description: Voice and text chat
+    cask: true
+    managers:
+      brew: discord

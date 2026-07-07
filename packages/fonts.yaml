@@ -1,0 +1,13 @@
+category: fonts
+description: Programming and terminal fonts (macOS casks).
+packages:
+  - name: font-meslo-for-powerlevel10k
+    description: MesloLGS NF — patched Meslo Nerd Font recommended for Powerlevel10k
+    cask: true
+    managers:
+      brew: font-meslo-for-powerlevel10k
+  - name: font-fira-code
+    description: Fira Code — monospace font with programming ligatures
+    cask: true
+    managers:
+      brew: font-fira-code
