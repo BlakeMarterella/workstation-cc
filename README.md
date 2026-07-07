@@ -13,9 +13,10 @@ Welcome to the Workstation Command Center! This is a setup utility to configure 
 The real work is done by a small, fast **Go binary** (`workstation`). The
 shell entry points only bootstrap it:
 
-1. **`install.sh` / `install.ps1`** — thin entry point. Sets `WORKSTATION_ROOT`
-   to the repo checkout directory, loads `config.sh`, and hands off to the
-   worker binary.
+1. **`install.sh` / `install.ps1`** — thin entry point. Loads `config.sh`, runs
+   the preflight (`lib/preflight.sh`: installs prerequisites and downloads a
+   checksum-verified worker binary for this OS/arch), sets `WORKSTATION_ROOT` to
+   the repo checkout directory, and hands off to the worker binary.
 2. **`workstation` (Go, lives in `wizard/`)** — detects the platform, resolves
    an installation profile into packages, installs the missing ones via the
    host package manager, and symlinks the repo's `dotfiles/` and `app-configs/`

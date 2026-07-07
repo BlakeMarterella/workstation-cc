@@ -11,6 +11,7 @@ This is a workstation setup tool — the first thing cloned on a new machine. It
 ```
 install.sh / install.ps1     # Entry points per platform (thin; set WORKSTATION_ROOT)
 config.sh                    # User-facing config: WORKSTATION_ROOT, profile defaults
+lib/preflight.sh             # POSIX-sh bootstrap: installs prereqs, downloads + verifies worker binary
 wizard/                      # Self-contained Go module (CLI, TUI, all install logic)
 packages/                    # Declarative package lists (embedded at build time)
 profiles.yaml                # Installation profiles
